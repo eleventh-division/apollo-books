@@ -34,5 +34,8 @@
     },
     "scripts": {
         "start": "nodemon server"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.12"
     }
 }

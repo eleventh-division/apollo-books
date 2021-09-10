@@ -20,7 +20,7 @@ const getDB = () => state.db
 
 const close = (done) => {
     if (state.db) {
-        state.db.close((err, result) => {
+        state.db.close((err) => {
             state.db = null
             // state.mode = null
             done(err)

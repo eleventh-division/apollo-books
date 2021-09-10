@@ -3,7 +3,6 @@ import { PubSub } from 'graphql-subscriptions';
 import getFieldNames from 'graphql-list-fields';
 
 import db from '../db.js';
-import { ObjectId } from 'bson';
 const pubsub = new PubSub();
 
 export const bookResolvers = {
@@ -11,7 +10,7 @@ export const bookResolvers = {
         getAllBooks: async () => {
             return await db.getCollection('books').find({}).toArray();
         },
-        getBook: async (parent, args, context, info) => {
+        getBook: async (parent, args) => {
             let books = await db.getCollection('books').findOne({ "_id": db.ObjectId(args._id) });
             console.log("________________________________________________")
             console.log(books);
@@ -45,7 +44,7 @@ export const bookResolvers = {
         addBook: async (parent, args, context, info) => {
             if (context.loggedIn) {
                 await db.getCollection('books').insertOne(args);
-                pubsub.publish('BOOK_ADDED', { bookAdded: args });
+                await pubsub.publish('BOOK_ADDED', { bookAdded: args });
                 return args;
             } else {
                 throw new AuthenticationError("Please Login Again!")
