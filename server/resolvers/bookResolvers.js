@@ -42,6 +42,8 @@ export const bookResolvers = {
     },
     Mutation: {
         addBook: async (parent, args, context, info) => {
+            assertPermission(user, 'create_book')
+
             if (context.loggedIn) {
                 await db.getCollection('books').insertOne(args);
                 await pubsub.publish('BOOK_ADDED', { bookAdded: args });
@@ -55,5 +57,27 @@ export const bookResolvers = {
         bookAdded: {
             subscribe: () => pubsub.asyncIterator(['BOOK_ADDED']),
         },
+    }
+}
+
+const notAuthorizedPermissions = ['get_books', 'get_genres']
+
+const roles = [{
+    id: 'UUID',
+    title: 'Admin',
+    permissions: ['create_author', 'create_moderator']
+}, ...]
+
+function assertPermission(user, operation) {
+    let can
+
+    if (!user) {
+        can = notAuthorizedPermissions.includes(operation)
+    } else {
+        can = user.role.includes(operation)
+    }
+
+    if (!can) {
+        throw new AuthenticationError("Authorization required!")
     }
 }
