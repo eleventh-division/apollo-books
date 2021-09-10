@@ -1,4 +1,4 @@
-import { query } from "./query.js";
-import { types } from "./types/index.js";
+import { query } from "./query.js"
+import { types } from "./types/index.js"
 
-export default [ query, types ];
+export default [query, types]

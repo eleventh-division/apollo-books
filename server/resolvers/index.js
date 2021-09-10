@@ -1,4 +1,4 @@
-import { userResolvers } from './userResolvers.js';
-import { bookResolvers } from './bookResolvers.js';
+import { userResolvers } from './userResolvers.js'
+import { bookResolvers } from './bookResolvers.js'
 
-export default [userResolvers, bookResolvers];
+export default [userResolvers, bookResolvers]
