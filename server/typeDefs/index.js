@@ -1,4 +1,8 @@
-import { query } from "./query.js"
-import { types } from "./types/index.js"
+const { query } = require("./query.js")
+const { types } = require("./types/index.js")
 
-export default [query, types]
+const typeDefs = [query, types]
+
+module.exports = {
+  typeDefs
+}

@@ -1,21 +1,29 @@
-import { gql } from "apollo-server-express"
+const { gql } = require("apollo-server-express")
 
-export const query = gql`
+const query = gql`
   type Query {
-    me: User
+  #    me: User
     getAllBooks: [Book]
-    getBook(_id: ID!): Book
-    getSortedBooks(title: String, author: String, year: Int, sort: String!): [Book]
+    getAllAuthors: [Author]
+    getAllGenres: [Genre]
+  #    getBook(_id: ID!): Book
+  #    getSortedBooks(title: String, author: String, year: Int, sort: String!): [Book]
   }
-
   type Mutation {
-    register(username: String!, password: String!): User
-    login(username: String!, password: String!): User
-    addBook(title: String!, author: String!, year: Int!): Book
+  #    register(username: String!, password: String!): User
+  #    login(username: String!, password: String!): User
+    insertBook( title: String!, author: String!, year: Int!, genre: String! ): Book
+    deleteBook( title: String! ): Book
+    insertAuthor( author_name: String!, genre: String! ): Author
+    deleteAuthor( author_name: String! ): Author
+    insertGenre( genre_name: String! ): Genre
+    deleteGenre( genre_name: String! ): Genre
   }
-
-  type Subscription {
-    bookAdded: Book
-    userAuthorized: User
-  }
+  #  type Subscription {
+  #    bookAdded: Book
+  #    userAuthorized: User
+  #  }
 `
+module.exports = {
+  query
+}

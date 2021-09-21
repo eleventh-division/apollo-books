@@ -1,9 +1,9 @@
-import jwt from "jsonwebtoken"
-import bcrypt from "bcryptjs"
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcryptjs")
 
-import config from './config/index.js'
+const config = require('./config/index.js')
 
-export const encryptPassword = password => new Promise((resolve, reject) => {
+const encryptPassword = password => new Promise((resolve, reject) => {
   bcrypt.genSalt(10, (err, salt) => {
     if (err) {
       reject(err)
@@ -20,7 +20,7 @@ export const encryptPassword = password => new Promise((resolve, reject) => {
   })
 })
 
-export const comparePassword = (password, hash) => new Promise(async (resolve, reject) => {
+const comparePassword = (password, hash) => new Promise(async (resolve, reject) => {
   try {
     const isMatch = await bcrypt.compare(password, hash)
     resolve(isMatch)
@@ -31,13 +31,13 @@ export const comparePassword = (password, hash) => new Promise(async (resolve, r
   }
 })
 
-export const getToken = payload => {
+const getToken = payload => {
   return jwt.sign(payload, config.secret, {
     expiresIn: 604800, // 1 Week
   })
 }
 
-export const getPayload = token => {
+const getPayload = token => {
   try {
     const payload = jwt.verify(token, config.secret)
     return { loggedIn: true, payload }
@@ -46,4 +46,11 @@ export const getPayload = token => {
     // console.error(err)
     return { loggedIn: false }
   }
+}
+
+module.exports = {
+  encryptPassword,
+  comparePassword,
+  getToken,
+  getPayload
 }

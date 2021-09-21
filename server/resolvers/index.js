@@ -1,4 +1,8 @@
-import { userResolvers } from './userResolvers.js'
-import { bookResolvers } from './bookResolvers.js'
+const { userResolvers } = require('./userResolvers.js')
+const { bookResolvers } = require('./bookResolvers.js')
 
-export default [userResolvers, bookResolvers]
+const resolvers = [userResolvers, bookResolvers]
+
+module.exports = {
+  resolvers
+}

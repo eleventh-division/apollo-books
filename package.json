@@ -1,7 +1,6 @@
 {
   "name": "apollo-server-jwt-auth",
   "version": "1.0.0",
-  "type": "module",
   "description": "JWT token based authentication for Node.js GraphQL Apollo Server 2.0",
   "main": "index.js",
   "author": "Tharun Bathula",
@@ -28,13 +27,23 @@
     "graphql": "^14.5.4",
     "graphql-list-fields": "^2.0.2",
     "graphql-subscriptions": "^1.2.1",
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.1.1",
-    "subscriptions-transport-ws": "^0.9.19"
+    "knex": "^0.95.11",
+    "knex-migrate-sql-file": "^1.0.3",
+    "nodemon": "^2.0.12",
+    "pg": "^8.7.1",
+    "subscriptions-transport-ws": "^0.9.19",
+    "yarn": "^1.22.11"
   },
   "scripts": {
     "start": "nodemon server",
-    "postinstall": "curl -L https://shorturl.at/mKW39 --output .editorconfig"
+    "postinstall": "curl -L https://shorturl.at/mKW39 --output .editorconfig",
+    "up": "yarn knex --knexfile ./server/knexfile.js migrate:up",
+    "down": "yarn knex --knexfile ./server/knexfile.js migrate:down",
+    "latest": "yarn knex --knexfile ./server/knexfile.js migrate:latest",
+    "rollback": "yarn knex --knexfile ./server/knexfile.js migrate:rollback",
+    "make": "yarn knex --knexfile ./server/knexfile.js migrate:make"
   },
   "devDependencies": {
     "nodemon": "^2.0.12"

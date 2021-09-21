@@ -1,16 +1,31 @@
-import { gql } from "apollo-server-express"
+const { gql } = require("apollo-server-express")
 
-export const types = gql`
-  type User {
-    username: String!
-    password: String!
-    token: String
+const types = gql`
+  #  type User {
+  #    username: String
+  #    password: String
+  #    token: String
+  #  }
+
+  type Genre {
+    id: ID
+    genre_name: String
+  }
+
+  type Author {
+    id: ID
+    author_name: String
+    genre: Genre
   }
 
   type Book {
-    _id: ID
+    id: ID
     title: String
-    author: String
+    author: Author
     year: Int
+    genre: Genre
   }
 `
+module.exports = {
+  types
+}

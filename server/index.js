@@ -1,15 +1,18 @@
-import { createServer } from "http"
-import { execute, subscribe } from "graphql"
-import { SubscriptionServer } from "subscriptions-transport-ws"
-import { makeExecutableSchema } from "@graphql-tools/schema"
-import express from "express"
-import { ApolloServer } from "apollo-server-express"
+const { createServer } = require("http")
+const { execute, subscribe } = require("graphql")
+const { SubscriptionServer } = require("subscriptions-transport-ws")
+const { makeExecutableSchema } = require("@graphql-tools/schema")
+const express = require("express")
+const { ApolloServer } = require("apollo-server-express")
 
-import resolvers from "./resolvers/index.js"
-import typeDefs from "./typeDefs/index.js"
-import { getPayload } from './util.js'
-import db from './db.js'
-import config from './config/index.js'
+const { resolvers } = require("./resolvers/index.js")
+const { typeDefs } = require("./typeDefs/index.js")
+const { getPayload } = require('./util.js')
+const db = require('./db/db.js')
+
+
+
+const config = require('./config/index.js')
 
 async function startServer() {
   const app = express()
@@ -34,11 +37,7 @@ async function startServer() {
     }],
     context: ({ req }) => {
       // Connect to DB
-      db.connect(config.database, (err) => {
-        if (err) {
-          console.error(err)
-        }
-      })
+      db: db.connect
 
       // get the user token from the headers
       const token = req.headers.authorization || ''
