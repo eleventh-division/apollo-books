@@ -1,6 +1,7 @@
 DROP TABLE books;
-DROP TABLE authors;
+DROP TABLE authors_genres;
 DROP TABLE genres;
---DROP TABLE users;
---DROP TABLE roles;
---DROP TABLE permissions;
+DROP TABLE authors;
+DROP TABLE users;
+DROP TABLE roles;
+DROP TABLE permissions;

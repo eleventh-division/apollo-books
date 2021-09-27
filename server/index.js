@@ -7,7 +7,7 @@ const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
 const { typeDefs } = require("./typeDefs/index.js")
-const { getPayload } = require('./util.js')
+const utils = require('./utils.js')
 const db = require('./db/db.js')
 
 
@@ -35,14 +35,14 @@ async function startServer() {
         }
       },
     }],
-    context: ({ req }) => {
+    context: ({ headers, req }) => {
       // Connect to DB
-      db: db.connect
+      db.connect
 
       // get the user token from the headers
       const token = req.headers.authorization || ''
       // try to retrieve a user with the token
-      const { payload: user, loggedIn } = getPayload(token)
+      const { payload: user, loggedIn } = utils.getPayload(token)
 
       // add the user to the context
       return { user, loggedIn }

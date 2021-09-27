@@ -1,11 +1,24 @@
 const { gql } = require("apollo-server-express")
 
 const types = gql`
-  #  type User {
-  #    username: String
-  #    password: String
-  #    token: String
-  #  }
+  type Permission {
+    id: ID
+    permission_name: String
+  }
+
+  type Role {
+    id: ID
+    role_name: String
+    permissions: [String]
+  }
+
+  type User {
+    id: ID
+    username: String
+    password: String
+    role: Role
+    token: String
+  }
 
   type Genre {
     id: ID
@@ -15,7 +28,7 @@ const types = gql`
   type Author {
     id: ID
     author_name: String
-    genre: Genre
+    genres: [Genre]
   }
 
   type Book {

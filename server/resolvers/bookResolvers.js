@@ -1,38 +1,39 @@
 const { AuthenticationError } = require('apollo-server-express')
 const { PubSub } = require('graphql-subscriptions')
 const getFieldNames = require('graphql-list-fields')
+const { v4: uuid } = require('uuid')
+// const { knex } = require('../db/db.js')
+const db = require('../db/models/index.js')
 
-const db = require('../db/db.js')
-const knexFile = require('../knexfile.js')
-const knex = require('knex')(knexFile.development)
 
 const pubsub = new PubSub()
 
 const bookResolvers = {
   Query: {
-    getAllBooks: async () => {
-      let books = await knex.select().from('books')
-      let author = []
-      let genre = []
-      for ( let i = 0; i < books.length; i++ ) {
-        author = await knex('authors').where('id', books[i].author)
-        genre = await knex('genres').where('id', books[i].genre)
-        books[i].author = author[0]
-        books[i].author.genre = genre[0]
-        books[i].genre = genre[0]
-      }
+    getAllBooks: async (parent, args, context) => {
+      // if ( context.user.role.role_name === "user" )
+      // db.Genre.hasMany(db.Book, {foreignKey: 'book_id'})
+      db.Book.belongsTo(db.Author, { foreignKey: 'author_id' })
+      db.Book.belongsTo(db.Genre, { foreignKey: 'genre_id' })
+      let books = []
+      await db.Book.findAll({ include: db.Genre, include: db.Author })
+        .then(result => {
+          result.forEach((item, index) => {
+            books.push(item.dataValues)
+            books[index].author = item.dataValues.Author.dataValues
+            // console.log(item.dataValues)
+            // books[index].genre = item.dataValues.Genre.dataValues
+          })
+        })
+        .catch(err => console.error(err))
 
       return books
+      // } else {
+      //   return new AuthenticationError('Login Again!')
+      // }
     },
     getAllAuthors: async () => {
-      let authors = await knex.select().from('authors')
-      let genre = []
-      for ( let i = 0; i < authors.length; i++ ) {
-        genre = await knex('genres').where('id', authors[i].genre)
-        authors[i].genre = genre[0]
-      }
 
-      return authors
 
       // let sql = "SELECT * FROM authors"
       // let result = await db.query(sql)
@@ -40,7 +41,14 @@ const bookResolvers = {
       // return result.rows
     },
     getAllGenres: async () => {
-      let genres = await knex.select().from('genres')
+      let genres = []
+      await db.Genre.findAll({})
+        .then(result => {
+          result.forEach((item) => {
+            genres.push(item.dataValues)
+          })
+        })
+        .catch(err => console.error(err))
 
       return genres
     },
@@ -76,44 +84,20 @@ const bookResolvers = {
   },
   Mutation: {
     insertBook: async (parent, args) => {
-      let genre = await knex('genres').where('genre_name', args.genre)
-      if (!genre[0]) {
-        genre = await knex('genres')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            genre_name: args.genre,
-          })
-      }
+      let book = {}
+      db.Book.belongsTo(db.Author, { foreignKey: 'author_id' })
+      db.Book.belongsTo(db.Genre, { foreignKey: 'genre_id' })
+      await db.Book.create({
+        id: uuid(),
+        title: args.title,
+        author_id: args.author,
+        year: args.year,
+        genre_id: args.genre
+      }).then(result => {
+        book = result.dataValues
+      }).catch(err => console.error(err))
 
-      let author = await knex('authors').where('author_name', args.author)
-      if (!author[0]) {
-        author = await knex('authors')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            author_name: args.author,
-            genre: genre[0].id
-          })
-      }
-
-      let book = await knex('books').where({ author: author[0].id, title: args.title })
-      if (!book[0]) {
-        book = await knex('books')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            title: args.title,
-            author: author[0].id,
-            year: args.year,
-            genre: genre[0].id
-          })
-      }
-
-      book[0].author = author[0]
-      book[0].author.genre = genre[0]
-      book[0].genre = genre[0]
-      return book[0]
+      return book
 
       // assertPermission(user, 'create_book')
       //
@@ -126,44 +110,20 @@ const bookResolvers = {
       // }
     },
     deleteBook: async (parent, args) => {
-      let author = await knex('authors')
-        .returning('*')
-        .where('author_name', args.author)
 
-      let book = await knex('books')
-        .returning('*')
-        .where({ title: args.title, author: author[0].id })
-        .del()
-
-      book[0].author = author[0]
-      return book[0]
 
       // DELETE FROM books WHERE title = 'Мастер времени';
     },
     insertAuthor: async (parent, args, context, info) => {
-      let genre = await knex('genres').where('genre_name', args.genre)
-      if (!genre[0]) {
-        genre = await knex('genres')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            genre_name: args.genre,
-          })
-      }
+      let author = {}
+      await db.Author.create({
+        id: uuid(),
+        author_name: args.author_name
+      }).then(result => {
+        author = result.dataValues
+      }).catch(err => console.error(err))
 
-      let author = await knex('authors').where('author_name', args.author_name)
-      if (!author[0]) {
-        author = await knex('authors')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            author_name: args.author_name,
-            genre: genre[0].id
-          })
-      }
-
-      author[0].genre = genre[0]
-      return author[0]
+      return author
 
       // let sql = "SELECT * FROM authors WHERE author_name = " + "'" + args.author_name + "'"
       // let result = await db.query(sql)
@@ -177,44 +137,37 @@ const bookResolvers = {
       // }
     },
     deleteAuthor: async (parent, args) => {
-      let author = await knex('authors').where('author_name', args.author_name)
-      let genre = await knex('genres').where('id', author[0].genre)
-      author[0].genre = genre[0]
 
-      await knex('authors')
-        .returning('*')
-        .where('id', author[0].id)
-        .del()
-
-      return author[0]
 
       // let sql = "DELETE FROM authors WHERE author_name = " + "'" + args.author_name + "'" + " RETURNING * ;"
       // let result = await db.query(sql)
       // return result.rows[0]
     },
     insertGenre: async (parent, args) => {
-      let genre = await knex('genres').where('genre_name', args.genre_name)
+      let genre = {}
+      await db.Genre.create({
+        id: uuid(),
+        genre_name: args.genre_name
+      }).then(result => {
+          genre = result.dataValues
+      }).catch(err => console.error(err))
 
-      if (!genre[0]) {
-        genre = await knex('genres')
-          .returning('*')
-          .insert({
-            id: knex.raw('uuid_generate_v4()'),
-            genre_name: args.genre_name,
-          })
-      }
-
-      return genre[0]
+      return genre
     },
     deleteGenre: async (parent, args) => {
-      let genre = await knex('genres').where('genre_name', args.genre_name)
+      let genres = []
+      await db.Genre.destroy({
+        where: {
+          genre_name: args.genre_name
+        },
+        returning: true
+      }).then(result => {
+        result.forEach((item) => {
+          genres.push(item.dataValues)
+        })
+      }).catch(err => console.error(err))
 
-      await knex('genres')
-        .returning('*')
-        .where('id', genre[0].id)
-        .del()
-
-      return genre[0]
+      return genres
     }
   },
   // Subscription: {

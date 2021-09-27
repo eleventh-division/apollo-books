@@ -1,5 +1,5 @@
 const { Client } = require("pg")
-client = new Client({
+const client = new Client({
   host: '127.0.0.1',
   port: 5432,
   database: 'base_of_books',
@@ -7,13 +7,20 @@ client = new Client({
   password: '11031999',
 })
 
+const knexFile = require('../knexfile.js')
+const knex = require('knex')(knexFile.development)
+
 exports.connect = client.connect((err) => {
   if (err) {
     console.error(err)
   } else {
-    console.log("Connected to PostgreSQL")
+    console.log("Connected PostgreSQL")
   }
 })
+
+module.exports = {
+  knex,
+}
 
 // exports.query = (sql) => {
 //   return new Promise((resolve, reject) => {
