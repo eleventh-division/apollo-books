@@ -7,7 +7,7 @@ const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
 const { typeDefs } = require("./typeDefs/index.js")
-const utils = require('./utils.js')
+const { getPayload } = require('./utils.js')
 const db = require('./db/db.js')
 
 
@@ -35,14 +35,14 @@ async function startServer() {
         }
       },
     }],
-    context: ({ headers, req }) => {
+    context: ({ req }) => {
       // Connect to DB
-      db.connect
+      db: db.connect
 
       // get the user token from the headers
       const token = req.headers.authorization || ''
       // try to retrieve a user with the token
-      const { payload: user, loggedIn } = utils.getPayload(token)
+      const { payload: user, loggedIn } = getPayload(token)
 
       // add the user to the context
       return { user, loggedIn }
@@ -64,10 +64,11 @@ async function startServer() {
     // path: '/'
   })
 
+  const HOST = 'localhost'
   const PORT = 4000
-  httpServer.listen(PORT, () =>
-    console.log(`Server is now running on http://localhost:${ PORT }/graphql`),
-  )
+  httpServer.listen(PORT, HOST,() => {
+    console.log(`Server is now running on http://${ HOST }:${ PORT }/graphql`)
+  })
 }
 
 startServer().catch(console.error)

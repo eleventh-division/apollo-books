@@ -1,15 +1,3 @@
-// const fs = require('path')
-// const Sequelize = require('sequelize')
-//
-// module.exports = {
-//   up: () => {
-//     return fs.readFile('20210915113942_initial.up.sql').then(sql => Sequelize.query(sql.toString()))
-//   },
-//   down: () => {
-//     return fs.readFile('20210915113942_initial.down.sql').then(sql => Sequelize.query(sql.toString()))
-//   }
-// }
-
 module.exports = require("knex-migrate-sql-file")()
 
 // exports.up = function (knex) {

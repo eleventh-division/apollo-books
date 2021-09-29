@@ -1,22 +1,19 @@
 const { DataTypes } = require('sequelize');
-// const sequelize = new Sequelize('postgres://admin:11031999@localhost:5432/base_of_books')
 
-// , DataTypes
 module.exports = (sequelize) => {
-  return sequelize.define('Genre', {
+  return sequelize.define('Authors_Genres', {
     // Model attributes are defined here
-    id: {
+    author_id: {
       type: DataTypes.UUIDV4,
       primaryKey: true,
-      allowNull: false,
-      unique: true
+      allowNull: false
     },
-    genre_name: {
+    genre_id: {
       type: DataTypes.STRING,
       allowNull: false
     },
   }, {
-    tableName: "genres",
+    tableName: "authors_genres",
     // timestamps: false
     paranoid: true,
     createdAt: false,

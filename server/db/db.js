@@ -7,20 +7,13 @@ const client = new Client({
   password: '11031999',
 })
 
-const knexFile = require('../knexfile.js')
-const knex = require('knex')(knexFile.development)
-
 exports.connect = client.connect((err) => {
   if (err) {
     console.error(err)
   } else {
-    console.log("Connected PostgreSQL")
+    console.log("Connected to PostgreSQL")
   }
 })
-
-module.exports = {
-  knex,
-}
 
 // exports.query = (sql) => {
 //   return new Promise((resolve, reject) => {

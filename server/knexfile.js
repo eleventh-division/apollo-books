@@ -14,13 +14,4 @@ module.exports = {
       directory: './db/migrations'
     }
   },
-  // staging: {
-  //   client: 'postgresql',
-  //   version: '11.13',
-  //   connection: "postgres://localhost/base_of_books",
-  //   migrations: {
-  //     tableName: 'migrations',
-  //     directory: './db/migrations'
-  //   }
-  // }
 };

@@ -13,7 +13,7 @@ CREATE TABLE roles
     CONSTRAINT role_pkey
       PRIMARY KEY,
   role_name VARCHAR NOT NULL,
-  permissions VARCHAR[] NOT NULL, -- Заменить потом на массив из UUID many to many
+  permissions UUID[] NOT NULL,
   deleted_at TIMESTAMP DEFAULT NULL
 );
 
@@ -25,8 +25,7 @@ CREATE TABLE users
   username VARCHAR NOT NULL,
   password VARCHAR NOT NULL,
   role_id UUID NOT NULL,
-  deleted_at TIMESTAMP DEFAULT NULL,
-  FOREIGN KEY (role_id) REFERENCES roles (id)
+  deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE TABLE genres
@@ -52,9 +51,9 @@ CREATE TABLE authors_genres
   author_id UUID NOT NULL,
   genre_id UUID NOT NULL,
   deleted_at TIMESTAMP DEFAULT NULL,
-  CONSTRAINT authors_genres_pkey PRIMARY KEY (author_id, genre_id),
   FOREIGN KEY (author_id) REFERENCES authors (id),
-  FOREIGN KEY (genre_id) REFERENCES genres (id)
+  FOREIGN KEY (genre_id) REFERENCES genres (id),
+  CONSTRAINT authors_genres_pkey PRIMARY KEY (author_id, genre_id)
 );
 
 CREATE TABLE books
@@ -63,9 +62,9 @@ CREATE TABLE books
     CONSTRAINT book_pkey
       PRIMARY KEY,
   title VARCHAR NOT NULL,
-  author_id UUID, -- NOT NULL
+  author_id UUID NOT NULL,
   year SMALLINT NOT NULL,
-  genre_id UUID, -- NOT NULL
+  genre_id UUID NOT NULL, -- VARCHAR NOT NULL
   deleted_at TIMESTAMP DEFAULT NULL,
   FOREIGN KEY (author_id) REFERENCES authors (id),
   FOREIGN KEY (genre_id) REFERENCES genres (id)
