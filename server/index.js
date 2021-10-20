@@ -7,7 +7,7 @@ const { makeExecutableSchema } = require("@graphql-tools/schema")
 const express = require("express")
 const app = express()
 const multer = require("multer")
-const upload = multer({ dest: './server/uploads/' })
+const upload = multer({ dest: 'uploads/' })
 const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
