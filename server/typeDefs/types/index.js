@@ -1,31 +1,61 @@
 const { gql } = require("apollo-server-express")
 
 const types = gql`
-  #  type User {
-  #    username: String
-  #    password: String
-  #    token: String
-  #  }
+  scalar Upload
+  scalar Object
+  input Filter {
+    where: Object
+    offset: Int
+    limit: Int
+  }
+
+  type Role {
+    id: ID
+    name: String
+    permissions: [String]
+  }
+
+  type User {
+    id: ID
+    username: String
+    password: String
+    role: Role
+    token: String
+  }
+
+  type BookData {
+    id: ID
+    title: String
+    description: String
+    year: Int
+    file_id: ID
+  }
+
+#  scalar BookData
 
   type Genre {
     id: ID
-    genre_name: String
+    name: String
+    error: String
   }
 
   type Author {
     id: ID
-    author_name: String
-    Genres: [Genre]
+    name: String
+    genres: [Genre]
+    books: [BookData]
   }
 
   type Book {
     id: ID
     title: String
-    Author: Author
+    description: String
+    author: Author
     year: Int
-    Genre: Genre
+    genre: Genre
+    file_id: ID
   }
 `
 module.exports = {
-  types
+  types,
 }

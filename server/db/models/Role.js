@@ -1,8 +1,9 @@
 const { Sequelize, Model, DataTypes } = require('sequelize');
 const sequelize = new Sequelize('postgres://admin:11031999@localhost:5432/base_of_books')
 
-class Genre extends Model {}
-Genre.init({
+class Role extends Model {}
+
+Role.init({
   id: {
     type: DataTypes.UUIDV4,
     primaryKey: true,
@@ -12,21 +13,18 @@ Genre.init({
     type: DataTypes.STRING,
     allowNull: false
   },
+  permissions: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    allowNull: false
+  }
 }, {
   sequelize,
-  modelName: 'genre',
-  tableName: 'genres',
+  modelName: 'role',
+  tableName: 'roles',
   paranoid: true,
   createdAt: false,
   updatedAt: false,
   deletedAt: 'deleted_at'
 });
 
-// Book.belongsTo(Genre, {
-//   foreignKey: 'genre_id',
-// })
-// Genre.hasMany(Book, {
-//   foreignKey: 'genre_id',
-// })
-
-module.exports = Genre
+module.exports = Role

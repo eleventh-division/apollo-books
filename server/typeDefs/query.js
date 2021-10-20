@@ -2,22 +2,25 @@ const { gql } = require("apollo-server-express")
 
 const query = gql`
   type Query {
-  #    me: User
-    getAllBooks: [Book]
-    getAllAuthors: [Author]
-    getAllGenres: [Genre]
-  #    getBook(_id: ID!): Book
-  #    getSortedBooks(title: String, author: String, year: Int, sort: String!): [Book]
+    me: User
+    getBooks(filter: Filter!): [Book]
+    getAuthors(filter: Filter!): [Author]
+    getGenres(filter: Filter!): [Genre]
   }
   type Mutation {
-  #    register(username: String!, password: String!): User
-  #    login(username: String!, password: String!): User
-    insertBook( title: String!, author_name: String!, year: Int!, genre_name: String! ): Book
-    deleteBook( title: String! ): Book
-    insertAuthor( author_name: String!, genre_name: String! ): Author
-    deleteAuthor( author_name: String! ): Author
-    insertGenre( genre_name: String! ): Genre
-    deleteGenre( genre_name: String! ): Genre
+    Upload: Upload!
+
+    upsertRole(name: String!, permissions: [String!]!): Role
+#    upsertModerator(username: String!, password: String!): User
+    register(username: String!, password: String!): User
+    login(username: String!, password: String!): User
+
+    upsertBook( title: String!, description: String!, author_id: ID!, year: Int!, genre_id: ID!, file: Upload): Book
+    deleteBook( book_id: ID! ): Book
+    upsertAuthor( author: String!, genres_id: [ID!]! ): Author
+    deleteAuthor( author_id: ID! ): Author
+    upsertGenre( genre: String! ): Genre
+    deleteGenre( genres_id: [ID!]! ): [Genre]
   }
   #  type Subscription {
   #    bookAdded: Book

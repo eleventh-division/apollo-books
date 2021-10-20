@@ -1,23 +1,29 @@
-const { createServer } = require("http")
+const { createServer } = require("https")
+const fs = require('fs')
 const { execute, subscribe } = require("graphql")
 const { SubscriptionServer } = require("subscriptions-transport-ws")
 const { makeExecutableSchema } = require("@graphql-tools/schema")
+// const depthLimit = require('graphql-depth-limit')
 const express = require("express")
+const app = express()
+const multer = require("multer")
+const upload = multer({ dest: './server/uploads/' })
 const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
 const { typeDefs } = require("./typeDefs/index.js")
-const { getPayload } = require('./utils.js')
+const utils = require('./utils.js')
 const db = require('./db/db.js')
-
-
 
 const config = require('./config/index.js')
 
-async function startServer() {
-  const app = express()
+const options = {
+  key: fs.readFileSync('server.key'),
+  cert: fs.readFileSync('server.cert')
+}
 
-  const httpServer = createServer(app)
+async function startServer() {
+  const httpServer = createServer(options, app)
 
   const schema = makeExecutableSchema({
     typeDefs,
@@ -26,6 +32,7 @@ async function startServer() {
 
   const server = new ApolloServer({
     schema,
+    // validationRules: [ depthLimit(2) ],
     plugins: [{
       async serverWillStart() {
         return {
@@ -37,12 +44,14 @@ async function startServer() {
     }],
     context: ({ req }) => {
       // Connect to DB
-      db: db.connect
+      db.connect
 
       // get the user token from the headers
-      const token = req.headers.authorization || ''
+      const bearer = req.headers.authorization || ''
+      const token = bearer.split(' ')[1]
+      // const token = req.headers.authorization || ''
       // try to retrieve a user with the token
-      const { payload: user, loggedIn } = getPayload(token)
+      const { payload: user, loggedIn } = utils.getPayload(token)
 
       // add the user to the context
       return { user, loggedIn }
@@ -67,8 +76,28 @@ async function startServer() {
   const HOST = 'localhost'
   const PORT = 4000
   httpServer.listen(PORT, HOST,() => {
-    console.log(`Server is now running on http://${ HOST }:${ PORT }/graphql`)
+    console.log(`Server is now running on https://${ HOST }:${ PORT }/graphql`)
   })
 }
+
+app.get('/', (req, res, next) => {
+  let options = {
+    root: './client'
+  };
+  let fileName = 'index.html';
+  res.sendFile(fileName, options, function (err) {
+    if (err) {
+      next(err);
+    } else {
+      console.log('Sent:', fileName);
+    }
+  });
+});
+
+app.post('/submit', upload.fields([]), (req, res) => {
+  console.log( req.body );
+  // console.log( req.files );
+  res.sendStatus(200);
+});
 
 startServer().catch(console.error)

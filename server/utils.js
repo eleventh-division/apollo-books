@@ -3,25 +3,52 @@ const bcrypt = require("bcryptjs")
 
 const config = require('./config/index.js')
 
-const knexFile = require('./knexfile.js')
-const knex = require('knex')(knexFile.development)
+exports.writeBook = ({ stream, filename }) => {
+  const uploadDir = './books';
+  const path = `${uploadDir}/${filename}`;
+  return new Promise((resolve, reject) =>
+    stream
+      .on('error', error => {
+        if (stream.truncated)
+          // delete the truncated file
+          fs.unlinkSync(path);
+        reject(error);
+      })
+      .pipe(fs.createWriteStream(path))
+      .on('error', error => reject(error))
+      .on('finish', () => resolve({ path }))
+  );
+}
 
-// exports.deleteStr = (table, returnColumns, query) => {
-//   let del = knex('genres')
-//     .returning('*')
-//     .where('id', 'Самосовершенствование')
-//     .del()
-//   console.log(del)
-//   return del[0]
-// }
+exports.createOrUpdate = async (model, filter, includes, values) => {
+  // First try to find the record
+  const foundItem = await model.findOne({ where: filter });
+  if (!foundItem) {
+    // Item not found, create a new one
+    await model.create(values)
+    const item = (await model.findOne({ where: filter, include: includes })).toJSON()
+    return  { item, created: true };
+  }
+  // Found an item, update it
+  await foundItem.update(values);
+  const item = (await model.findOne({ where: filter, include: includes })).toJSON()
+  return { item, created: false };
+}
 
-// exports.insertStr = (table, columns, data) => {
-//   return knex(table)
-//     .returning(columns)
-//     .insert(data)
-// }
-
-
+exports.createOrRestore = async (model, filter, includes, values) => {
+  // First try to find the record
+  const foundItem = await model.findOne({ where: filter, paranoid: false });
+  if (!foundItem) {
+    // Item not found, create a new one
+    await model.create(values)
+    const item = (await model.findOne({ where: filter, include: includes })).toJSON()
+    return  { item, created: true };
+  }
+  // Found an item, update it
+  await foundItem.restore({ where: filter });
+  const item = (await model.findOne({ where: filter, include: includes })).toJSON()
+  return { item, created: false };
+}
 
 exports.encryptPassword = password => new Promise((resolve, reject) => {
   bcrypt.genSalt(10, (err, salt) => {

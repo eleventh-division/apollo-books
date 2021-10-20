@@ -1,51 +1,104 @@
-const {AuthenticationError} = require('apollo-server-express')
-const {PubSub} = require('graphql-subscriptions')
+const { AuthenticationError } = require('apollo-server-express')
+const { PubSub } = require('graphql-subscriptions')
+const { v4: uuid } = require('uuid')
 
-const {getToken, encryptPassword, comparePassword, getPayload} = require("../utils.js")
-const db = require('../db/db.js')
+const utils = require("../utils.js")
+const User = require('../db/models/User')
+const Role = require('../db/models/Role')
 
 const pubsub = new PubSub()
 
 const userResolvers = {
-  // Query: {
-  // me: (parent, args, context) => {
-  // if (context.loggedIn) {
-  //   return context.user
-  // } else {
-  //   throw new AuthenticationError("Please Login Again!")
-  // }
-  // },
-  // },
+  Query: {
+    me: (args, context) => {
+      if (context.loggedIn) {
+        return context.user
+      } else {
+        throw new AuthenticationError("Please Login Again!")
+      }
+    },
+  },
   Mutation: {
-    // register: async (parent, args) => {
-    // const newUser = {username: args.username, password: await encryptPassword(args.password)}
-    // // Check conditions
-    // const user = await db.getCollection('users').findOne({username: args.username})
-    // if (user) {
-    //   throw new AuthenticationError("User Already Exists!")
-    // }
-    //
-    // try {
-    //   const regUser = (await db.getCollection('users').insertOne(newUser)).ops[0]
-    //   const token = getToken(regUser)
-    //   return { ...regUser, token }
-    // } catch (e) {
-    //   throw e
-    // }
+    upsertRole: async (args) => {
+      const [role] = (await Role.findOrCreate({
+        where: { name: args.name },
+        defaults: {
+          id: uuid(),
+          name: args.name,
+          permissions: args.permissions
+        },
+      }))
+      return role
+    },
+    // upsertModerator: async (args, context) => {
+      // const newModerator = {
+      //   id: uuid(),
+      //   username: args.username,
+      //   password: await utils.encryptPassword(args.password),
+      //   role_id: "35589cb1-6af5-4ec2-9e08-e7ae3773dd38"
+      // }
+      // // Check conditions
+      // const user = await User.findOne({
+      //   where: { username: args.username }
+      // })
+      // if (user) {
+      //   throw new AuthenticationError("Пользователь уже существует!")
+      // }
+      //
+      // try {
+      //   await User.create(newModerator)
+      //   const regUser = await User.findOne({
+      //     where: { username: newModerator.username },
+      //     include: [Role]
+      //   })
+      //   const token = utils.getToken(regUser.toJSON())
+      //   return { ...regUser.toJSON(), token }
+      // } catch (err) {
+      //   throw err
+      // }
     // },
-    // login: async (parent, args) => {
-    // const user = await db.getCollection('users').findOne({username: args.username})
-    // const isMatch = await comparePassword(args.password, user.password)
-    //
-    // if (isMatch) {
-    //   const token = getToken(user)
-    //   user.token = token
-    //   await pubsub.publish('USER_AUTHORIZED', {userAuthorized: user})
-    //   return { ...user, token }
-    // } else {
-    //   throw new AuthenticationError("Wrong Password!")
-    // }
-    // },
+    register: async (args) => {
+      const newUser = {
+        id: uuid(),
+        username: args.username,
+        password: await utils.encryptPassword(args.password),
+      }
+      // Check conditions
+      const user = await User.findOne({
+        where: { username: args.username }
+      })
+      if (user) {
+        throw new AuthenticationError("User is exist!")
+      }
+
+      try {
+        await User.create(newUser)
+        const regUser = await User.findOne({
+          where: { username: newUser.username },
+          include: [Role]
+        })
+        const token = utils.getToken(regUser.toJSON())
+        return { ...regUser.toJSON(), token }
+      } catch (err) {
+        throw err
+      }
+    },
+    login: async (args) => {
+      const user = (await User.findOne({
+        where: { username: args.username },
+        include: [Role]
+      })).toJSON()
+      const isMatch = await utils.comparePassword(args.password, user.password)
+
+      if (isMatch) {
+        const token = utils.getToken(user)
+        user.token = token
+        // await pubsub.publish('USER_AUTHORIZED', { userAuthorized: user.toJSON() })
+        return { ...user, token }
+      } else {
+        throw new AuthenticationError("Wrong Password!")
+      }
+    },
   },
   // Subscription: {
   // userAuthorized: {

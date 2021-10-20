@@ -1,315 +1,225 @@
 const { AuthenticationError } = require('apollo-server-express')
+const { GraphQLUpload } = require('graphql-upload')
 const { PubSub } = require('graphql-subscriptions')
 const getFieldNames = require('graphql-list-fields')
 const { v4: uuid } = require('uuid')
-// const { knex } = require('../db/db.js')
-const db = require('../db/models/index.js')
 
-const pubsub = new PubSub()
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op
+const Genre = require('../db/models/Genre')
+const Author = require('../db/models/Author')
+const Authors_Genres = require('../db/models/Authors_Genres')
+const Book = require('../db/models/Book')
+const utils = require('../utils')
+const { where } = require('sequelize')
+
+// const pubsub = new PubSub()
 
 const bookResolvers = {
   Query: {
-    getAllBooks: async (parent, args, context) => {
-      // if ( context.user.role.role_name === "user" )
-      // db.Genre.hasMany(db.Book, {foreignKey: 'book_id'})
-      db.Book.belongsTo(db.Author, { foreignKey: 'author_id' })
-      db.Book.belongsTo(db.Genre, { foreignKey: 'genre_id' })
-      let books = []
-      await db.Book.findAll({ include: db.Genre, include: db.Author })
-        .then(result => {
-          result.forEach((item, index) => {
-            books.push(item.dataValues)
-            books[index].author = item.dataValues.Author.dataValues
-            // console.log(item.dataValues)
-            // books[index].genre = item.dataValues.Genre.dataValues
-          })
-        })
-        .catch(err => console.error(err))
+    getBooks: async (parent, args, context) => {
+      return (await Book.findAll(
+        {
+          where: args.filter.where,
+          offset: args.filter.offset,
+          limit: args.filter.limit,
+          include: [
+            {
+              model: Author,
+              include: [Genre],
+            },
+            { model: Genre },
+          ],
+      })).map((item) => item.toJSON())
+    },
+    getAuthors: async (parent, args, context) => {
+      return (await Author
+        .findAll({
+          where: args.filter.where,
+          offset: args.filter.offset,
+          limit: args.filter.limit,
+          include: [Genre, Book]
+        }))
+        .map((item) => item.toJSON())
+    },
 
-      return books
+    // __getAllAuthors: async () => (await Author
+    //   .findAll({ include: [Genre] }))
+    //   .map((item) => item.toJSON()),
+
+    getGenres: async (parent, args, context) => {
+
+      return (await Genre
+        .findAll({
+          where: args.filter.where,
+          offset: args.filter.offset,
+          limit: args.filter.limit
+        }))
+        .map((item) => item.toJSON())
+    },
+  },
+  Mutation: {
+    Upload: GraphQLUpload,
+    upsertBook: async (parent, args, content) => {
+      // if (content.loggedIn && content.user.role.name === 'author') {
+        const genre = (await Genre.findOne({
+          where: { id: args.genre_id },
+        })).toJSON()
+
+        const author = (await Author.findOne({
+          where: { id: args.author_id },
+          include: [Genre],
+        })).toJSON()
+
+        if (genre && author) {
+          // const { mimetype, createReadStream } = await args.file;
+          const filename = uuid()
+          // const stream = createReadStream();
+          // await utils.writeBook({ stream, filename })
+
+          const book = await utils.createOrUpdate(
+            Book,
+            {
+              title: args.title, author_id: author.id,
+            },
+            [
+              { model: Author, include: [Genre] },
+              { model: Genre },
+            ],
+            {
+              id: uuid(),
+              title: args.title,
+              description: args.description,
+              author_id: author.id,
+              year: args.year,
+              genre_id: genre.id,
+              file_id: filename,
+            })
+          return book.item
+        } else {
+          return new Error('Не удалось создать книгу. Жанр и/или автор не найдены!')
+        }
       // } else {
       //   return new AuthenticationError('Login Again!')
       // }
     },
-    getAllAuthors: async () => {
-      let authors = []
-      db.Genre.belongsToMany(db.Author, {
-        through: 'authors_genres',
-        foreignKey: 'genre_id'
-      })
-      db.Author.belongsToMany(db.Genre, {
-        through: 'authors_genres',
-        foreignKey: 'author_id'
+    deleteBook: async (parent, args) => {
+      const book = Book.findOne({
+        where: { id: args.book_id },
+        include: [
+          { model: Author, include: [Genre] },
+          { model: Genre },
+        ],
       })
 
-      db.Author.findAll({ include: [db.Genre] })
-        .then(result => {
-          result.forEach((item, index) => {
-            authors.push(item.toJSON())
-            // authors[index].genre = item.dataValues.Genre.dataValues
-          })
-        })
-        .catch(err => console.error(err))
-
-      return authors
-      // let sql = "SELECT * FROM authors"
-      // let result = await db.query(sql)
-      //
-      // return result.rows
-    },
-    getAllGenres: async () => {
-      let genres = []
-
-      await db.Genre.findAll({})
-        .then(result => {
-          result.forEach((item) => {
-            genres.push(item.toJSON())
-          })
-        })
-        .catch(err => console.error(err))
-
-      return genres
-    },
-    // getBook: async (parent, args) => {
-    // let books = await db.getCollection('books').findOne({ "_id": db.ObjectId(args._id) })
-    // console.log("________________________________________________")
-    // console.log(books)
-    // return books
-    // },
-    // getSortedBooks: async (parent, args, context, info) => {
-    // let query = {}
-    // let options = {
-    //   // sort returned documents in ascending order by title (A->Z)
-    //   sort: {},
-    //   // Include only the `title` and `author` fields in each returned document
-    //   projection: { _id: 0 },
-    // }
-    //
-    // let fields = Object.keys(args)
-    // query[fields[0]] = args[fields[0]]
-    //
-    // options.sort[args.sort] = 1
-    // fields = getFieldNames(info)
-    // for (let key = 0; key < fields.length; key++) {
-    //   options.projection[fields[key]] = 1
-    // }
-    //
-    // let books = await db.getCollection('books').find(query, options).toArray()
-    // console.log("________________________________________________")
-    // console.log(books)
-    // return books
-    // },
-  },
-  Mutation: {
-    insertBook: async (parent, args) => {
-      let book = {}
-      db.Book.belongsTo(db.Author, { foreignKey: 'author_id' })
-      // db.Author.hasMany(db.Book)
-      db.Genre.belongsToMany(db.Author, {
-        through: 'authors_genres',
-        foreignKey: 'genre_id'
+      await Book.destroy({
+        where: { id: args.book_id },
       })
-      db.Author.belongsToMany(db.Genre, {
-        through: 'authors_genres',
-        foreignKey: 'author_id'
-      })
-      db.Book.belongsTo(db.Genre, { foreignKey: 'genre_id'})
-      // db.Genre.hasMany(db.Book)
-
-      await db.Author.findAll({
-        limit: 1,
-        where: { author_name: args.author_name }
-      }).then( async (authorTemp) => {
-        if (authorTemp[0]) {
-          await db.Book.findAll({
-            limit: 1,
-            where: { title: args.title, author_id: authorTemp[0].toJSON().id },
-            include: [
-              {
-                model: db.Author,
-                include: [db.Genre]
-              },
-              { model: db.Genre }
-            ],
-          }).then( bookTemp => {
-            if (bookTemp[0]) {
-              book = bookTemp[0].toJSON()
-            } else {
-              book = null
-            }
-          }).catch(err => console.error(err))
-        } else {
-          book = null
-        }
-      }).catch(err => console.error(err))
-
-      if (!book) {
-        book = {}
-        await db.Genre.findOrCreate({
-          where: { genre_name: args.genre_name },
-          defaults: {
-            id: uuid(),
-            genre_name: args.genre_name,
-          },
-        }).then(async (genreTemp) => {
-          await db.Author.findOrCreate({
-            where: { author_name: args.author_name },
-            defaults: {
-              id: uuid(),
-              author_name: args.author_name,
-            },
-            include: [db.Genre],
-          }).then(async (authorTemp) => {
-            await db.Authors_Genres.findOrCreate({
-              where: { author_id: authorTemp[0].dataValues.id, genre_id: genreTemp[0].dataValues.id },
-              defaults: {
-                author_id: authorTemp[0].toJSON().id,
-                genre_id: genreTemp[0].toJSON().id,
-              },
-            }).catch(err => console.error(err))
-            await db.Book.findOrCreate({
-              where: { title: args.title, author_id: authorTemp[0].toJSON().id },
-              defaults: {
-                id: uuid(),
-                title: args.title,
-                author_id: authorTemp[0].toJSON().id,
-                year: args.year,
-                genre_id: genreTemp[0].toJSON().id,
-              },
-              include: [
-                { model: db.Author },
-                { model: db.Genre },
-              ],
-            }).then(bookTemp => {
-              book = bookTemp[0].toJSON()
-
-              if (authorTemp[0]._options.isNewRecord) {
-                book.Author = authorTemp[0].toJSON()
-                book.Author.Genres = []
-              } else {
-                book.Author = authorTemp[0].toJSON()
-              }
-              if (genreTemp[0]._options.isNewRecord || authorTemp[0]._options.isNewRecord) {
-                book.Author.Genres.push(genreTemp[0].toJSON())
-              }
-              if (bookTemp[0]._options.isNewRecord) {
-                book.Genre = genreTemp[0].toJSON()
-              }
-
-            }).catch(err => console.error(err))
-          }).catch(err => console.error(err))
-        }).catch(err => console.error(err))
-      }
 
       return book
-
-      // assertPermission(user, 'create_book')
-      //
-      // if (context.loggedIn) {
-      //   await db.getCollection('books').insertOne(args)
-      //   await pubsub.publish('BOOK_ADDED', { bookAdded: args })
-      //   return args
-      // } else {
-      //   throw new AuthenticationError("Please Login Again!")
-      // }
     },
-    deleteBook: async (parent, args) => {
-
-
-      // DELETE FROM books WHERE title = 'Мастер времени';
-    },
-    insertAuthor: async (parent, args, context, info) => {
-      let author = {}
-      db.Genre.belongsToMany(db.Author, {
-        through: 'authors_genres',
-        foreignKey: 'genre_id'
-      })
-      db.Author.belongsToMany(db.Genre, {
-        through: 'authors_genres',
-        foreignKey: 'author_id'
-      })
-
-      await db.Genre.findOrCreate({
-        where: { genre_name: args.genre_name },
-        defaults: {
-          id: uuid(),
-          genre_name: args.genre_name
-        }
-      }).then( async (genreTemp) => {
-        await db.Author.findOrCreate({
-          where: { author_name: args.author_name },
-          defaults: {
+    upsertAuthor: async (parent, args, context, info) => {
+      const genres = (await Genre.findAll({
+        where: {
+          id: {
+            [Op.or]: args.genres_id
+          }
+        },
+      })).map((item) => item.toJSON())
+      if (genres.length > 0) {
+        const author = await utils.createOrUpdate(
+          Author,
+          { name: args.author },
+          [Genre],
+          {
             id: uuid(),
-            author_name: args.author_name
-          },
-          include: [db.Genre]
-        }).then( async (authorTemp) => {
-          await db.Authors_Genres.findOrCreate({
-            where: { author_id: authorTemp[0].dataValues.id, genre_id: genreTemp[0].dataValues.id },
-            defaults: {
-              author_id: authorTemp[0].toJSON().id,
-              genre_id: genreTemp[0].toJSON().id
-            }
-          }).catch(err => console.error(err))
-          if ( authorTemp[0]._options.isNewRecord ) {
-            author = authorTemp[0].toJSON()
-            author.Genres = []
-          } else {
-            author = authorTemp[0].toJSON()
-          }
-          if ( genreTemp[0]._options.isNewRecord || authorTemp[0]._options.isNewRecord  ) {
-            author.Genres.push(genreTemp[0].toJSON())
-          }
-        }).catch(err => console.error(err))
-      }).catch(err => console.error(err))
+            name: args.author,
+          })
+        await Authors_Genres.destroy({
+          where: { author_id: author.item.id }
+        })
+        for(let item of genres) {
+          await utils.createOrRestore(
+            Authors_Genres,
+            { author_id: author.item.id, genre_id: item.id },
+            [],
+            {
+              author_id: author.item.id,
+              genre_id: item.id,
+            },
+          )
+        }
 
-      return author
-
-      // let sql = "SELECT * FROM authors WHERE author_name = " + "'" + args.author_name + "'"
-      // let result = await db.query(sql)
-      // if (result.rows[0]) {
-      //   return result.rows[0]
-      // } else {
-      //   sql = "INSERT INTO authors VALUES ( uuid_generate_v4(), \n" +
-      //     "'" + args.author_name + "'," + "'" + args.genre + "' ) RETURNING * ;"
-      //   result = await db.query(sql)
-      //   return result.rows[0]
-      // }
+        author.item.genres = genres
+        return author.item
+      } else {
+        return new Error('Не удалось создать автора. Жанры не найдены!')
+      }
     },
     deleteAuthor: async (parent, args) => {
+      const author = (await Author.findOne({
+        where: { id: args.author_id },
+        include: [Genre],
+      })).toJSON()
 
+      const books = (await Book.findAll({
+        where: { author_id: author.id },
+      })).map((item) => item.toJSON())
 
-      // let sql = "DELETE FROM authors WHERE author_name = " + "'" + args.author_name + "'" + " RETURNING * ;"
-      // let result = await db.query(sql)
-      // return result.rows[0]
+      if (books.length > 0) {
+        return Error('Невозможно удалить автора, так как у него имеются книги!')
+      } else {
+        await Author.destroy({
+          where: { id: author.id },
+        })
+        await Authors_Genres.destroy({
+          where: { author_id: author.id },
+        })
+        return author
+      }
     },
-    insertGenre: async (parent, args) => {
-      let genre = {}
-      await db.Genre.findOrCreate({
-        where: { genre_name: args.genre_name },
-        defaults: {
+    upsertGenre: async (parent, args) => {
+      const genre = await utils.createOrUpdate(
+        Genre,
+        { name: args.genre },
+        [],
+        {
           id: uuid(),
-          genre_name: args.genre_name
-        }
-      }).then(result => {
-          genre = result[0].dataValues
-      }).catch(err => console.error(err))
-      return genre
+          name: args.genre,
+        })
+
+      return genre.item
     },
     deleteGenre: async (parent, args) => {
-      let genres = []
-      await db.Genre.destroy({
+      let genres = (await Genre.findAll({
         where: {
-          genre_name: args.genre_name
+          id: {
+            [Op.or]: args.genres_id
+          }
         },
-        returning: true
-      }).then(result => {
-        result.forEach((item) => {
-          genres.push(item.dataValues)
-        })
-      }).catch(err => console.error(err))
+      })).map((item) => {
+        return item.toJSON()
+      })
+
+      for(let genre of genres) {
+        let books = (await Book.findAll({
+          where: { genre_id: genre.id },
+        })).map((item) => item.toJSON())
+
+        if (books.length > 0) {
+          genre.error = Error('Невозможно удалить жанр, так как у него имеются книги!').message
+        } else {
+          await Authors_Genres.destroy({
+            where: { genre_id: genre.id },
+          })
+          await Genre.destroy({
+            where: { id: genre.id },
+          })
+        }
+      }
+
       return genres
-    }
+    },
   },
   // Subscription: {
   // bookAdded: {
@@ -319,7 +229,7 @@ const bookResolvers = {
 }
 
 module.exports = {
-  bookResolvers
+  bookResolvers,
 }
 
 // const notAuthorizedPermissions = ['get_books', 'get_genres']
