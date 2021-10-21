@@ -82,7 +82,7 @@ async function startServer() {
 
 app.get('/', (req, res, next) => {
   let options = {
-    root: './client'
+    root: '../client'
   };
   let fileName = 'index.html';
   res.sendFile(fileName, options, function (err) {
