@@ -6,8 +6,8 @@ const { makeExecutableSchema } = require("@graphql-tools/schema")
 // const depthLimit = require('graphql-depth-limit')
 const express = require("express")
 const app = express()
-const multer = require("multer")
-const upload = multer({ dest: 'uploads/' })
+// const multer = require("multer")
+// const upload = multer({ dest: 'uploads/' })
 const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
@@ -79,25 +79,5 @@ async function startServer() {
     console.log(`Server is now running on https://${ HOST }:${ PORT }/graphql`)
   })
 }
-
-app.get('/', (req, res, next) => {
-  let options = {
-    root: '../client'
-  };
-  let fileName = 'index.html';
-  res.sendFile(fileName, options, function (err) {
-    if (err) {
-      next(err);
-    } else {
-      console.log('Sent:', fileName);
-    }
-  });
-});
-
-app.post('/submit', upload.fields([]), (req, res) => {
-  console.log( req.body );
-  // console.log( req.files );
-  res.sendStatus(200);
-});
 
 startServer().catch(console.error)
