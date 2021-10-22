@@ -3,6 +3,7 @@ const { gql } = require("apollo-server-express")
 const query = gql`
   type Query {
 #    me: User
+#    (filter: Filter!)
     getBooks(filter: Filter!): [Book]
     getAuthors(filter: Filter!): [Author]
     getGenres(filter: Filter!): [Genre]
@@ -15,12 +16,12 @@ const query = gql`
 #    register(username: String!, password: String!): User
 #    login(username: String!, password: String!): User
 
-    upsertBook( title: String!, description: String!, author_id: ID!, year: Int!, genre_id: ID!, file: Upload): Book
-    deleteBook( book_id: ID! ): Book
-    upsertAuthor( author: String!, genres_id: [ID!]! ): Author
-    deleteAuthor( author_id: ID! ): Author
     upsertGenre( genre: String! ): Genre
-    deleteGenre( genres_id: [ID!]! ): [Genre]
+    deleteGenres( genres_id: [ID!]! ): [Genre]
+    upsertAuthor( author: String!, genres_id: [ID!]! ): Author
+    deleteAuthors( authors_id: [ID!]! ): [Author]
+    upsertBook( title: String!, description: String!, author_id: ID!, year: Int!, genre_id: ID!, file: Upload): Book
+    deleteBooks( books_id: [ID!]! ): [Book]
   }
   #  type Subscription {
   #    bookAdded: Book

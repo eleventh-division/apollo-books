@@ -36,7 +36,6 @@ const types = gql`
   type Genre {
     id: ID
     name: String
-    error: String
   }
 
   type Author {

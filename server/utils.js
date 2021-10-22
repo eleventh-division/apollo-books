@@ -50,33 +50,33 @@ exports.createOrRestore = async (model, filter, includes, values) => {
   return { item, created: false };
 }
 
-exports.encryptPassword = password => new Promise((resolve, reject) => {
-  bcrypt.genSalt(10, (err, salt) => {
-    if (err) {
-      reject(err)
-      return false
-    }
-    bcrypt.hash(password, salt, (err, hash) => {
-      if (err) {
-        reject(err)
-        return false
-      }
-      resolve(hash)
-      return true
-    })
-  })
-})
-
-exports.comparePassword = (password, hash) => new Promise(async (resolve, reject) => {
-  try {
-    const isMatch = await bcrypt.compare(password, hash)
-    resolve(isMatch)
-    return true
-  } catch (err) {
-    reject(err)
-    return false
-  }
-})
+// exports.encryptPassword = password => new Promise((resolve, reject) => {
+//   bcrypt.genSalt(10, (err, salt) => {
+//     if (err) {
+//       reject(err)
+//       return false
+//     }
+//     bcrypt.hash(password, salt, (err, hash) => {
+//       if (err) {
+//         reject(err)
+//         return false
+//       }
+//       resolve(hash)
+//       return true
+//     })
+//   })
+// })
+//
+// exports.comparePassword = (password, hash) => new Promise(async (resolve, reject) => {
+//   try {
+//     const isMatch = await bcrypt.compare(password, hash)
+//     resolve(isMatch)
+//     return true
+//   } catch (err) {
+//     reject(err)
+//     return false
+//   }
+// })
 
 exports.getToken = payload => {
   return jwt.sign(payload, config.secret, {

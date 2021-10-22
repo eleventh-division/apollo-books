@@ -1,7 +1,7 @@
-const { AuthenticationError } = require('apollo-server-express')
+// const { AuthenticationError } = require('apollo-server-express')
 const { GraphQLUpload } = require('graphql-upload')
-const { PubSub } = require('graphql-subscriptions')
-const getFieldNames = require('graphql-list-fields')
+// const { PubSub } = require('graphql-subscriptions')
+// const getFieldNames = require('graphql-list-fields')
 const { v4: uuid } = require('uuid')
 
 const Sequelize = require('sequelize')
@@ -11,7 +11,6 @@ const Author = require('../db/models/Author')
 const Authors_Genres = require('../db/models/Authors_Genres')
 const Book = require('../db/models/Book')
 const utils = require('../utils')
-const { where } = require('sequelize')
 
 // const pubsub = new PubSub()
 
@@ -48,7 +47,6 @@ const bookResolvers = {
     //   .map((item) => item.toJSON()),
 
     getGenres: async (parent, args, context) => {
-
       return (await Genre
         .findAll({
           where: args.filter.where,
@@ -60,18 +58,22 @@ const bookResolvers = {
   },
   Mutation: {
     Upload: GraphQLUpload,
-    upsertBook: async (parent, args, content) => {
-      // if (content.loggedIn && content.user.role.name === 'author') {
-        const genre = (await Genre.findOne({
-          where: { id: args.genre_id },
-        })).toJSON()
+    upsertBook: async (parent, args, context) => {
+      // if (content.loggedIn && context.user.role.name === 'author') {
+      //   const genre = (await Genre.findOne({
+      //     where: { id: args.genre_id },
+      //   })).toJSON()
+      //
+      //   const author = (await Author.findOne({
+      //     where: { id: args.author_id },
+      //     include: [Genre],
+      //   })).toJSON()
 
-        const author = (await Author.findOne({
-          where: { id: args.author_id },
-          include: [Genre],
-        })).toJSON()
+        const authors_genres = await Authors_Genres.findOne({
+          where: { author_id: args.author_id, genre_id: args.genre_id }
+        })
 
-        if (genre && author) {
+        if (authors_genres) {
           // const { mimetype, createReadStream } = await args.file;
           const filename = uuid()
           // const stream = createReadStream();
@@ -80,7 +82,7 @@ const bookResolvers = {
           const book = await utils.createOrUpdate(
             Book,
             {
-              title: args.title, author_id: author.id,
+              title: args.title, author_id: args.author_id,
             },
             [
               { model: Author, include: [Genre] },
@@ -90,33 +92,39 @@ const bookResolvers = {
               id: uuid(),
               title: args.title,
               description: args.description,
-              author_id: author.id,
+              author_id: args.author_id,
               year: args.year,
-              genre_id: genre.id,
+              genre_id: args.genre_id,
               file_id: filename,
             })
           return book.item
         } else {
-          return new Error('Не удалось создать книгу. Жанр и/или автор не найдены!')
+          throw new Error('Не удалось создать книгу. Жанр и/или автор не найдены!')
         }
       // } else {
       //   return new AuthenticationError('Login Again!')
       // }
     },
-    deleteBook: async (parent, args) => {
-      const book = Book.findOne({
-        where: { id: args.book_id },
+    deleteBooks: async (parent, args) => {
+      const books = (await Book.findAll({
+        where: {
+          id: {
+            [Op.or]: args.books_id
+          }
+        },
         include: [
           { model: Author, include: [Genre] },
           { model: Genre },
         ],
-      })
+      })).map((item) => item.toJSON())
 
-      await Book.destroy({
-        where: { id: args.book_id },
-      })
+      for(let book of books) {
+        await Book.destroy({
+          where: { id: book.id },
+        })
+      }
 
-      return book
+      return books
     },
     upsertAuthor: async (parent, args, context, info) => {
       const genres = (await Genre.findAll({
@@ -153,30 +161,39 @@ const bookResolvers = {
         author.item.genres = genres
         return author.item
       } else {
-        return new Error('Не удалось создать автора. Жанры не найдены!')
+        throw new Error('Не удалось создать автора. Жанры не найдены!')
       }
     },
-    deleteAuthor: async (parent, args) => {
-      const author = (await Author.findOne({
-        where: { id: args.author_id },
-        include: [Genre],
-      })).toJSON()
-
-      const books = (await Book.findAll({
-        where: { author_id: author.id },
+    deleteAuthors: async (parent, args) => {
+      const authors = (await Author.findAll({
+        where: {
+          id: {
+            [Op.or]: args.authors_id
+          }
+        },
+        include: [Genre]
       })).map((item) => item.toJSON())
 
-      if (books.length > 0) {
-        return Error('Невозможно удалить автора, так как у него имеются книги!')
-      } else {
+      for(let author of authors) {
+        const books = (await Book.findAll({
+          where: { author_id: author.id },
+        })).map((item) => item.toJSON())
+
+        if (books.length > 0) {
+          throw Error(`Невозможно удалить авторов, так как у автора \'${ author.name }\' имеются книги!`)
+        }
+      }
+
+      for(let author of authors) {
         await Author.destroy({
           where: { id: author.id },
         })
         await Authors_Genres.destroy({
           where: { author_id: author.id },
         })
-        return author
       }
+
+      return authors
     },
     upsertGenre: async (parent, args) => {
       const genre = await utils.createOrUpdate(
@@ -190,16 +207,14 @@ const bookResolvers = {
 
       return genre.item
     },
-    deleteGenre: async (parent, args) => {
-      let genres = (await Genre.findAll({
+    deleteGenres: async (parent, args) => {
+      const genres = (await Genre.findAll({
         where: {
           id: {
             [Op.or]: args.genres_id
           }
         },
-      })).map((item) => {
-        return item.toJSON()
-      })
+      })).map((item) => item.toJSON())
 
       for(let genre of genres) {
         let books = (await Book.findAll({
@@ -207,15 +222,25 @@ const bookResolvers = {
         })).map((item) => item.toJSON())
 
         if (books.length > 0) {
-          genre.error = Error('Невозможно удалить жанр, так как у него имеются книги!').message
+          throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются книги!`)
         } else {
-          await Authors_Genres.destroy({
+          let authors = (await Authors_Genres.findAll({
             where: { genre_id: genre.id },
-          })
-          await Genre.destroy({
-            where: { id: genre.id },
-          })
+          })).map((item) => item.toJSON())
+
+          if (authors.length > 0) {
+            throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются авторы!`)
+          }
         }
+      }
+
+      for(let genre of genres) {
+        await Authors_Genres.destroy({
+          where: { genre_id: genre.id },
+        })
+        await Genre.destroy({
+          where: { id: genre.id },
+        })
       }
 
       return genres
@@ -231,6 +256,12 @@ const bookResolvers = {
 module.exports = {
   bookResolvers,
 }
+
+/**
+ * @param args              Input arguments.
+ * @param args.genre        Input argument for upsertGenre.
+ * @param args.genres_id    Input argument for deleteGenres.
+ */
 
 // const notAuthorizedPermissions = ['get_books', 'get_genres']
 //

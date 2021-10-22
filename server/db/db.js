@@ -14,12 +14,3 @@ exports.connect = client.connect((err) => {
     console.log("Connected to PostgreSQL")
   }
 })
-
-// exports.query = (sql) => {
-//   return new Promise((resolve, reject) => {
-//     client.query(sql, (error, results) => {
-//       if (error) return reject(error);
-//       return resolve(results);
-//     });
-//   })
-// }

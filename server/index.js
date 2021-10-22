@@ -1,4 +1,4 @@
-const { createServer } = require("https")
+const https = require("https")
 const fs = require('fs')
 const { execute, subscribe } = require("graphql")
 const { SubscriptionServer } = require("subscriptions-transport-ws")
@@ -15,7 +15,7 @@ const { typeDefs } = require("./typeDefs/index.js")
 const utils = require('./utils.js')
 const db = require('./db/db.js')
 
-const config = require('./config/index.js')
+// const config = require('./config/index.js')
 
 const options = {
   key: fs.readFileSync('server.key'),
@@ -23,7 +23,7 @@ const options = {
 }
 
 async function startServer() {
-  const httpServer = createServer(options, app)
+  const httpsServer = https.createServer(options, app)
 
   const schema = makeExecutableSchema({
     typeDefs,
@@ -37,7 +37,7 @@ async function startServer() {
       async serverWillStart() {
         return {
           async drainServer() {
-            subscriptionServer.close()
+            await subscriptionServer.close()
           },
         }
       },
@@ -60,7 +60,7 @@ async function startServer() {
 
   const subscriptionServer = SubscriptionServer.create(
     { schema, execute, subscribe },
-    { server: httpServer, path: server.graphqlPath },
+    { server: httpsServer, path: server.graphqlPath },
   )
 
   await server.start()
@@ -73,9 +73,9 @@ async function startServer() {
     // path: '/'
   })
 
-  const HOST = 'localhost'
+  const HOST = '0.0.0.0'
   const PORT = 4000
-  httpServer.listen(PORT, HOST,() => {
+  httpsServer.listen(PORT, HOST,() => {
     console.log(`Server is now running on https://${ HOST }:${ PORT }/graphql`)
   })
 }
