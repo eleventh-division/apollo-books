@@ -2,7 +2,7 @@ const fs = require('fs')
 
 // module.exports = {
   function writeMigrations() {
-    const files = fs.readdirSync('../migrations')
+    const files = fs.readdirSync('./migrations')
     if(!files) {
       throw Error(`Write migrations error, because migrations undefined!`)
     }
@@ -37,7 +37,7 @@ module.exports = {
   }
 };`
 
-      fs.writeFileSync(`../migrations/${ item }.js`, data)
+      fs.writeFileSync(`./migrations/${ item }.js`, data)
       console.log(`./migrations/${ item }.js has been created!`)
     }
   }

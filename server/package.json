@@ -36,7 +36,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "migrations": "node 20210915113942-initial.js",
+    "migrations": "node ./scripts/writeMigrations.js",
     "start": "nodemon index.js",
     "postinstall": "curl -L https://shorturl.at/mKW39 --output .editorconfig",
     "up": "yarn sequelize-cli db:migrate",
