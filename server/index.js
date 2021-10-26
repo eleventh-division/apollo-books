@@ -42,9 +42,9 @@ async function startServer() {
         }
       },
     }],
-    context: ({ req }) => {
+    context: async ({ req }) => {
       // Connect to DB
-      db.connect
+      await db.connect
 
       // get the user token from the headers
       const bearer = req.headers.authorization || ''

@@ -28,7 +28,14 @@ const types = gql`
     title: String
     description: String
     year: Int
+    genre: Genre
     file_id: ID
+  }
+
+  type AuthorData {
+    id: ID
+    name: String
+    genres: [Genre]
   }
 
 #  scalar BookData
@@ -49,7 +56,7 @@ const types = gql`
     id: ID
     title: String
     description: String
-    author: Author
+    author: AuthorData
     year: Int
     genre: Genre
     file_id: ID

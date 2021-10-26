@@ -37,7 +37,13 @@ const bookResolvers = {
           where: args.filter.where,
           offset: args.filter.offset,
           limit: args.filter.limit,
-          include: [Genre, Book]
+          include: [
+            Genre,
+            {
+              model: Book,
+              include: Genre,
+            },
+          ]
         }))
         .map((item) => item.toJSON())
     },
