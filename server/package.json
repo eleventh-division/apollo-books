@@ -26,14 +26,23 @@
     "graphql": "^15.6.1",
     "graphql-depth-limit": "^1.1.0",
     "graphql-list-fields": "^2.0.2",
+    "graphql-query-complexity": "^0.9.0",
     "graphql-subscriptions": "^1.2.1",
     "graphql-upload": "^12.0.0",
     "jsonwebtoken": "^8.5.1",
+    "multer": "^1.4.3",
     "pg": "^8.7.1",
+    "pkg": "^5.4.1",
     "sequelize": "^6.7.0",
     "sequelize-cli": "^6.2.0",
     "subscriptions-transport-ws": "^0.9.19",
     "uuid": "^8.3.2"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "./**/*"
+    ]
   },
   "scripts": {
     "migrations": "node ./scripts/writeMigrations.js",

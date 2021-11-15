@@ -4,9 +4,9 @@ const query = gql`
   type Query {
 #    me: User
 #    (filter: Filter!)
-    getBooks(filter: Filter!): [Book]
-    getAuthors(filter: Filter!): [Author]
     getGenres(filter: Filter!): [Genre]
+    getAuthors(filter: Filter!): [Author]
+    getBooks(filter: Filter!): [Book]
   }
   type Mutation {
     Upload: Upload!
@@ -24,8 +24,8 @@ const query = gql`
     deleteBooks( books_id: [ID!]! ): [Book]
   }
   #  type Subscription {
-  #    bookAdded: Book
   #    userAuthorized: User
+  #    bookAdded: Book
   #  }
 `
 module.exports = {

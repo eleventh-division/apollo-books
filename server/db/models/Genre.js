@@ -22,11 +22,4 @@ Genre.init({
   deletedAt: 'deleted_at'
 });
 
-// Book.belongsTo(Genre, {
-//   foreignKey: 'genre_id',
-// })
-// Genre.hasMany(Book, {
-//   foreignKey: 'genre_id',
-// })
-
 module.exports = Genre

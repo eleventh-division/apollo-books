@@ -23,22 +23,20 @@ const types = gql`
     token: String
   }
 
-  type BookData {
-    id: ID
-    title: String
-    description: String
-    year: Int
-    genre: Genre
-    file_id: ID
-  }
-
-  type AuthorData {
-    id: ID
-    name: String
-    genres: [Genre]
-  }
-
-#  scalar BookData
+#  type BookData {
+#    id: ID
+#    title: String
+#    description: String
+#    year: Int
+#    genre: Genre
+#    file_id: ID
+#  }
+#
+#  type AuthorData {
+#    id: ID
+#    name: String
+#    genres: [Genre]
+#  }
 
   type Genre {
     id: ID
@@ -49,14 +47,14 @@ const types = gql`
     id: ID
     name: String
     genres: [Genre]
-    books: [BookData]
+    books: [Book]
   }
 
   type Book {
     id: ID
     title: String
     description: String
-    author: AuthorData
+    author: Author
     year: Int
     genre: Genre
     file_id: ID

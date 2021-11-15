@@ -50,14 +50,6 @@ Book.belongsTo(Author, {
 Author.hasMany(Book, {
   foreignKey: 'author_id',
 })
-// Genre.belongsToMany(Author, {
-//   through: 'authors_genres',
-//   foreignKey: 'genre_id'
-// })
-// Author.belongsToMany(Genre, {
-//   through: 'authors_genres',
-//   foreignKey: 'author_id'
-// })
 Book.belongsTo(Genre, { foreignKey: 'genre_id'})
 Genre.hasMany(Book, { foreignKey: 'genre_id'})
 

@@ -21,14 +21,6 @@ User.init({
   role_id: {
     type: DataTypes.UUIDV4,
     allowNull: false,
-    // defaultValue: "35589cb1-6af5-4ec2-9e08-e7ae3773dd38"
-    // defaultValue: async () => {
-    //   let role = (await Role.findOne({
-    //     attributes: ['id'],
-    //     where: { name: "user" }
-    //   })).toJSON()
-    //   return role.id
-    // },
   }
 }, {
   sequelize,

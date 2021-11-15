@@ -16,20 +16,14 @@ const utils = require('../utils')
 
 const bookResolvers = {
   Query: {
-    getBooks: async (parent, args, context) => {
-      return (await Book.findAll(
-        {
+    getGenres: async (parent, args, context, info) => {
+      return (await Genre
+        .findAll({
           where: args.filter.where,
           offset: args.filter.offset,
-          limit: args.filter.limit,
-          include: [
-            {
-              model: Author,
-              include: [Genre],
-            },
-            { model: Genre },
-          ],
-      })).map((item) => item.toJSON())
+          limit: args.filter.limit
+        }))
+        .map((item) => item.toJSON())
     },
     getAuthors: async (parent, args, context) => {
       return (await Author
@@ -52,85 +46,74 @@ const bookResolvers = {
     //   .findAll({ include: [Genre] }))
     //   .map((item) => item.toJSON()),
 
-    getGenres: async (parent, args, context) => {
-      return (await Genre
+    getBooks: async (parent, args, context) => {
+      return (await Book
         .findAll({
           where: args.filter.where,
           offset: args.filter.offset,
-          limit: args.filter.limit
+          limit: args.filter.limit,
+          include: [
+            {
+              model: Author,
+              include: [Genre],
+            },
+            { model: Genre },
+          ],
         }))
         .map((item) => item.toJSON())
     },
   },
   Mutation: {
     Upload: GraphQLUpload,
-    upsertBook: async (parent, args, context) => {
-      // if (content.loggedIn && context.user.role.name === 'author') {
-      //   const genre = (await Genre.findOne({
-      //     where: { id: args.genre_id },
-      //   })).toJSON()
-      //
-      //   const author = (await Author.findOne({
-      //     where: { id: args.author_id },
-      //     include: [Genre],
-      //   })).toJSON()
-
-        const authors_genres = await Authors_Genres.findOne({
-          where: { author_id: args.author_id, genre_id: args.genre_id }
+    upsertGenre: async (parent, args) => {
+      const genre = await utils.createOrUpdate(
+        Genre,
+        { name: args.genre },
+        [],
+        {
+          id: uuid(),
+          name: args.genre,
         })
 
-        if (authors_genres) {
-          // const { mimetype, createReadStream } = await args.file;
-          const filename = uuid()
-          // const stream = createReadStream();
-          // await utils.writeBook({ stream, filename })
-
-          const book = await utils.createOrUpdate(
-            Book,
-            {
-              title: args.title, author_id: args.author_id,
-            },
-            [
-              { model: Author, include: [Genre] },
-              { model: Genre },
-            ],
-            {
-              id: uuid(),
-              title: args.title,
-              description: args.description,
-              author_id: args.author_id,
-              year: args.year,
-              genre_id: args.genre_id,
-              file_id: filename,
-            })
-          return book.item
-        } else {
-          throw new Error('Не удалось создать книгу. Жанр и/или автор не найдены!')
-        }
-      // } else {
-      //   return new AuthenticationError('Login Again!')
-      // }
+      return genre.item
     },
-    deleteBooks: async (parent, args) => {
-      const books = (await Book.findAll({
+    deleteGenres: async (parent, args) => {
+      const genres = (await Genre.findAll({
         where: {
           id: {
-            [Op.or]: args.books_id
+            [Op.or]: args.genres_id
           }
         },
-        include: [
-          { model: Author, include: [Genre] },
-          { model: Genre },
-        ],
       })).map((item) => item.toJSON())
 
-      for(let book of books) {
-        await Book.destroy({
-          where: { id: book.id },
+      for(let genre of genres) {
+        let books = (await Book.findAll({
+          where: { genre_id: genre.id },
+        })).map((item) => item.toJSON())
+
+        if (books.length > 0) {
+          throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются книги!`)
+        } else {
+          let authors = (await Authors_Genres.findAll({
+            where: { genre_id: genre.id },
+          })).map((item) => item.toJSON())
+
+          if (authors.length > 0) {
+            throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются авторы!`)
+          }
+        }
+      }
+
+      for(let genre of genres) {
+        await Authors_Genres.destroy({
+          where: { genre_id: genre.id },
+        })
+        await Genre.destroy({
+          where: { id: genre.id },
         })
       }
 
-      return books
+      return genres
     },
     upsertAuthor: async (parent, args, context, info) => {
       const genres = (await Genre.findAll({
@@ -201,55 +184,73 @@ const bookResolvers = {
 
       return authors
     },
-    upsertGenre: async (parent, args) => {
-      const genre = await utils.createOrUpdate(
-        Genre,
-        { name: args.genre },
-        [],
-        {
-          id: uuid(),
-          name: args.genre,
-        })
+    upsertBook: async (parent, args, context) => {
+      // if (content.loggedIn && context.user.role.name === 'author') {
+      //   const genre = (await Genre.findOne({
+      //     where: { id: args.genre_id },
+      //   })).toJSON()
+      //
+      //   const author = (await Author.findOne({
+      //     where: { id: args.author_id },
+      //     include: [Genre],
+      //   })).toJSON()
 
-      return genre.item
+      const authors_genres = await Authors_Genres.findOne({
+        where: { author_id: args.author_id, genre_id: args.genre_id }
+      })
+
+      if (authors_genres) {
+        // const { mimetype, createReadStream } = await args.file;
+        const filename = uuid()
+        // const stream = createReadStream();
+        // await utils.writeBook({ stream, filename })
+
+        const book = await utils.createOrUpdate(
+          Book,
+          {
+            title: args.title, author_id: args.author_id,
+          },
+          [
+            { model: Author, include: [Genre] },
+            { model: Genre },
+          ],
+          {
+            id: uuid(),
+            title: args.title,
+            description: args.description,
+            author_id: args.author_id,
+            year: args.year,
+            genre_id: args.genre_id,
+            file_id: filename,
+          })
+        return book.item
+      } else {
+        throw new Error('Не удалось создать книгу. Жанр и/или автор не найдены!')
+      }
+      // } else {
+      //   return new AuthenticationError('Login Again!')
+      // }
     },
-    deleteGenres: async (parent, args) => {
-      const genres = (await Genre.findAll({
+    deleteBooks: async (parent, args) => {
+      const books = (await Book.findAll({
         where: {
           id: {
-            [Op.or]: args.genres_id
+            [Op.or]: args.books_id
           }
         },
+        include: [
+          { model: Author, include: [Genre] },
+          { model: Genre },
+        ],
       })).map((item) => item.toJSON())
 
-      for(let genre of genres) {
-        let books = (await Book.findAll({
-          where: { genre_id: genre.id },
-        })).map((item) => item.toJSON())
-
-        if (books.length > 0) {
-          throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются книги!`)
-        } else {
-          let authors = (await Authors_Genres.findAll({
-            where: { genre_id: genre.id },
-          })).map((item) => item.toJSON())
-
-          if (authors.length > 0) {
-            throw Error(`Невозможно удалить жанры, так как у жанра \'${ genre.name }\' имеются авторы!`)
-          }
-        }
-      }
-
-      for(let genre of genres) {
-        await Authors_Genres.destroy({
-          where: { genre_id: genre.id },
-        })
-        await Genre.destroy({
-          where: { id: genre.id },
+      for(let book of books) {
+        await Book.destroy({
+          where: { id: book.id },
         })
       }
 
-      return genres
+      return books
     },
   },
   // Subscription: {

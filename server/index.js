@@ -1,13 +1,12 @@
 const https = require("https")
 const fs = require('fs')
-const { execute, subscribe } = require("graphql")
+const { GraphQLError, execute, subscribe } = require("graphql")
 const { SubscriptionServer } = require("subscriptions-transport-ws")
 const { makeExecutableSchema } = require("@graphql-tools/schema")
+const { createComplexityRule, simpleEstimator } = require("graphql-query-complexity")
 // const depthLimit = require('graphql-depth-limit')
 const express = require("express")
 const app = express()
-// const multer = require("multer")
-// const upload = multer({ dest: 'uploads/' })
 const { ApolloServer } = require("apollo-server-express")
 
 const { resolvers } = require("./resolvers/index.js")
@@ -32,7 +31,7 @@ async function startServer() {
 
   const server = new ApolloServer({
     schema,
-    // validationRules: [ depthLimit(2) ],
+    // validationRules: validation.rules,
     plugins: [{
       async serverWillStart() {
         return {
@@ -45,6 +44,7 @@ async function startServer() {
     context: async ({ req }) => {
       // Connect to DB
       await db.connect
+
 
       // get the user token from the headers
       const bearer = req.headers.authorization || ''
