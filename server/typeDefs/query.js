@@ -4,9 +4,9 @@ const query = gql`
   type Query {
 #    me: User
 #    (filter: Filter!)
-    getGenres(filter: Filter!): [Genre]
-    getAuthors(filter: Filter!): [Author]
-    getBooks(filter: Filter!): [Book]
+    getGenres: [Genre]
+    getAuthors: [Author]
+    getBooks: [Book]
   }
   type Mutation {
     Upload: Upload!
