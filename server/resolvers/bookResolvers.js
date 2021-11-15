@@ -19,18 +19,18 @@ const bookResolvers = {
     getGenres: async (parent, args, context, info) => {
       return (await Genre
         .findAll({
-          where: args.filter.where,
-          offset: args.filter.offset,
-          limit: args.filter.limit
+          // where: args.filter.where,
+          // offset: args.filter.offset,
+          // limit: args.filter.limit
         }))
         .map((item) => item.toJSON())
     },
     getAuthors: async (parent, args, context) => {
       return (await Author
         .findAll({
-          where: args.filter.where,
-          offset: args.filter.offset,
-          limit: args.filter.limit,
+          // where: args.filter.where,
+          // offset: args.filter.offset,
+          // limit: args.filter.limit,
           include: [
             Genre,
             {
@@ -49,9 +49,9 @@ const bookResolvers = {
     getBooks: async (parent, args, context) => {
       return (await Book
         .findAll({
-          where: args.filter.where,
-          offset: args.filter.offset,
-          limit: args.filter.limit,
+          // where: args.filter.where,
+          // offset: args.filter.offset,
+          // limit: args.filter.limit,
           include: [
             {
               model: Author,

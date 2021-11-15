@@ -11,8 +11,6 @@ const query = gql`
   type Mutation {
     Upload: Upload!
 
-#    upsertRole(name: String!, permissions: [String!]!): Role
-#    upsertModerator(username: String!, password: String!): User
 #    register(username: String!, password: String!): User
 #    login(username: String!, password: String!): User
 
